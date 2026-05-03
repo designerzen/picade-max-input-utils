@@ -1,86 +1,10 @@
-# picade-max-input-utils
+# Picade Max Input Utils
+
 The Picade Max Input sounds great on paper but is badly documented and doesn't work as designed. This repo brings together things learned trying to implement the board
 
 With the buttons closest to you. the pins are not as specified on the PCB. The actual signals sent out via USB are as follows, from the right most pin to the left
 
-1.
-
-X
-
-P1
-
-P2
-
-A
-
-B
-
--
-
-LB
-
-LT
-
-RB
-
-RT
-
-Y
-
--
-
-SELECT
-
-START
-
-LS
-
-RS
-
-DUP
-
-
----
-USB PORT
-PLASMA PORT
----
-
-2.
-
-X
-
-P1
-
-P2
-
-A
-
-B
-
--
-
-LB
-
-LT
-
-RB
-
-RT
-
-Y
-
--
-
-SELECT
-
-START
-
-LS
-
-RS
-
-DUP
-
+2 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X] [USB-C] 1 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X]
 
 Plasma Control 
 ===
