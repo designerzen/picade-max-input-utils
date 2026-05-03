@@ -6,22 +6,37 @@ With the buttons closest to you. the pins are not as specified on the PCB. The a
 1.
 
 X
+
 P1
+
 P2
+
 A
+
 B
 
+
 LB
+
 LT
+
 RB
+
 RT
+
 Y
 
+
 SELECT
+
 START
+
 LS
+
 RS
+
 DUP
+
 
 ---
 USB PORT
@@ -31,22 +46,37 @@ PLASMA PORT
 2.
 
 X
+
 P1
+
 P2
+
 A
+
 B
 
+
 LB
+
 LT
+
 RB
+
 RT
+
 Y
 
+
 SELECT
+
 START
+
 LS
+
 RS
+
 DUP
+
 
 
 Plasma Control 
