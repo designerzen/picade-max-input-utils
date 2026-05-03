@@ -15,6 +15,7 @@ A
 
 B
 
+-
 
 LB
 
@@ -26,6 +27,7 @@ RT
 
 Y
 
+-
 
 SELECT
 
@@ -55,6 +57,7 @@ A
 
 B
 
+-
 
 LB
 
@@ -66,6 +69,7 @@ RT
 
 Y
 
+-
 
 SELECT
 
@@ -76,7 +80,6 @@ LS
 RS
 
 DUP
-
 
 
 Plasma Control 
