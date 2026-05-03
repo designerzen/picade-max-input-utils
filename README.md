@@ -19,8 +19,12 @@ The buttons on the Picade joystick panel are labeled 1-6 which is not helpful wh
 Coin. Select
 1UP. Start
 
-Left button. LB
-Right button. RB
+Left side button. LB
+Right side button. RB
+
+Which lined up are 
+
+[DUP|RS|LS|1UP START|COIN SELECT] [2 Y|3 RT|RB RB|6 LT|LB LB] [5 B|4 A|P2|P1|1 X] [USB-C]
 
 Plasma Control 
 ===
