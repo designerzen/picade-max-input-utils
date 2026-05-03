@@ -1,10 +1,15 @@
 # Picade Max Input Utils
 
-The Picade Max Input sounds great on paper but is badly documented and doesn't work as designed. This repo brings together things learned trying to implement the board
+The Picade Max Input sounds great on paper but is badly documented and doesn't work as designed. This repo brings together things learned trying to implement the board.
 
-With the buttons closest to you. the pins are not as specified on the PCB. The actual signals sent out via USB are as follows, from the right most pin to the left
+The red LED will turn on when a button is pressed, unless there are multiple button presses. The LED will light up green on boot and will remain green until a button is pressed. If the LED is red on startup, it is likely because a button was pressed when the board was turned on - pressing RESET without touching any buttons will fix that.
 
-2 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X] [USB-C] 1 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X]
+With the buttons closest to you. the pins are not as specified on the PCB. The actual signals sent out via USB are as follows
+
+PLAYER 2 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X] 
+[PLASMA]
+[USB-C] 
+PLAYER 1 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X]
 
 
 The buttons on the Picade joystick panel are labeled 1-6 which is not helpful when trying to match them to the none numbered sockets. I recommend the following layout :
