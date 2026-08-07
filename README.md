@@ -6,9 +6,9 @@ The red LED will turn on when a button is pressed, unless there are multiple but
 
 With the buttons closest to you. the pins are not as specified on the PCB. The actual signals sent out via USB are as follows
 
-PLAYER 2 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X] 
+PLAYER 2 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X]
 [PLASMA]
-[USB-C] 
+[USB-C]
 PLAYER 1 [DUP|RS|LS|START|SELECT] [Y|RT|RB|LT|LB] [B|A|P2|P1|X]
 
 
@@ -27,11 +27,61 @@ Coin. Select
 Left side button. LB
 Right side button. RB
 
-Which lined up are 
+Which lined up are
 
 [DUP|RS|LS|1UP START|COIN SELECT] [2 Y|3 RT|RB RB|6 LT|LB LB] [5 B|4 A|P2|P1|1 X] [USB-C]
 
-Plasma Control 
+Plasma Control
 ===
 
 Connecting the plasma buttons does not illuminate the buttons despite what the documentation suggests. There are some python libraries designed for controlling these lights, a javascript version also exists.
+
+Forked firmware
+===
+
+This repository now includes the Pimoroni Picade Max Input firmware as the base
+for a macOS compatibility fork. The original input scanning and button mapping
+are retained. The build produces three firmware images so host enumeration can
+be tested independently from the Picade hardware:
+
+* `picade-max-input-legacy.uf2` preserves the original two gamepads, inactive
+  boot keyboard and Plasma CDC serial interface.
+* `picade-max-input-macos-hid.uf2` exposes only two HID gamepad interfaces. It
+  removes the inactive keyboard, CDC serial interfaces and composite IAD device
+  class that may interfere with macOS enumeration.
+* `picade-max-input-macos-dual-report.uf2` exposes one HID interface containing
+  two Game Pad application collections. Player 1 uses report ID 1 and Player 2
+  uses report ID 2. This is intended for hosts that collapse two similar HID
+  interfaces belonging to one physical USB device.
+
+Test the `macos-hid` image first. If macOS or the target application still
+shows only one controller, test `macos-dual-report` and record whether IOHID and
+the application expose one or two logical controllers.
+
+The HID-only builds deliberately disable Plasma serial control. Once the
+working macOS layout is established, Plasma support can be added back without
+reintroducing the inactive keyboard interface.
+
+Building
+---
+
+The project currently follows the upstream Pico SDK build arrangement. Set
+`PICO_SDK_PATH` and `PIMORONI_PICO_PATH`, then configure and build with CMake:
+
+```sh
+cmake -S . -B build \
+  -DPICO_SDK_PATH=/path/to/pico-sdk \
+  -DPIMORONI_PICO_PATH=/path/to/pimoroni-pico
+cmake --build build --parallel
+```
+
+Updating the board
+---
+
+1. Hold `RESET` and press `BOOT` on the Picade Max Input board.
+2. Release the buttons when the `RPI-RP2` drive appears.
+3. Copy one UF2 image to the drive. The board will reboot automatically.
+
+The three builds use different USB device version numbers, but macOS may cache
+USB/HID properties. Unplug the controller between tests. If results look stale,
+use a different physical USB port or reboot the Mac before comparing builds.
