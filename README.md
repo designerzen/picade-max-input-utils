@@ -85,3 +85,25 @@ Updating the board
 The three builds use different USB device version numbers, but macOS may cache
 USB/HID properties. Unplug the controller between tests. If results look stale,
 use a different physical USB port or reboot the Mac before comparing builds.
+
+Browser gamepad test
+---
+
+A dependency-free diagnostic page in `tests/browser` enumerates every gamepad
+the browser exposes, displays all axes and buttons live, and records whether
+input was observed from each logical controller. Run it from the repository
+root with:
+
+```sh
+npm run dev
+```
+
+Open <http://localhost:8000>, select **Start monitoring**, then press buttons
+for both players. Use **Download JSON** to capture results for comparison across
+firmware profiles, browsers, macOS and Windows. See
+[`tests/browser/README.md`](tests/browser/README.md) for expected results.
+
+The tester is also deployed to
+<https://designerzen.github.io/picade-max-input-utils/> by the dedicated GitHub
+Pages workflow whenever its browser assets change on `main`. The workflow can
+also be started manually from the repository's **Actions** tab.

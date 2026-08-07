@@ -1,0 +1,13 @@
+{
+  "name": "picade-max-input-utils",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Picade Max firmware experiments and browser gamepad diagnostics",
+  "scripts": {
+    "dev": "node tests/browser/server.mjs",
+    "test": "node --check tests/browser/server.mjs && node --check tests/browser/gamepad-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

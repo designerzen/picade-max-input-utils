@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Picade Max Gamepad Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="gamepad-test.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to tester</a>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Picade Max Input Utils</p>
+        <h1>Two-player gamepad test</h1>
+        <p class="lede">See exactly which controllers, axes and buttons the browser receives from the USB device.</p>
+      </div>
+      <span id="monitor-status" class="status status-idle">Stopped</span>
+    </header>
+
+    <main id="main">
+      <section class="panel" aria-labelledby="connection-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="connection-title">Connection</h2>
+            <p>Connect the Picade, select <strong>Start monitoring</strong>, then press a button for each player. Browsers often hide gamepads until their first input.</p>
+          </div>
+          <div class="actions">
+            <button id="start-button" type="button">Start monitoring</button>
+            <button id="stop-button" class="secondary" type="button" disabled>Stop</button>
+            <button id="reset-button" class="secondary" type="button">Reset observations</button>
+          </div>
+        </div>
+        <dl class="environment-grid">
+          <div><dt>Gamepad API</dt><dd id="api-value">Checking…</dd></div>
+          <div><dt>Secure context</dt><dd id="secure-value">Checking…</dd></div>
+          <div><dt>Controllers exposed</dt><dd id="controller-count">0</dd></div>
+          <div><dt>Last scan</dt><dd id="last-scan">Not started</dd></div>
+        </dl>
+        <p class="privacy-note">Everything runs locally in this tab. No gamepad data is uploaded.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="checks-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="checks-title">Picade checks</h2>
+            <p>These checks are intentionally host-facing: they report what macOS and the browser expose, not what the board LEDs receive.</p>
+          </div>
+        </div>
+        <ul id="check-list" class="check-list"></ul>
+      </section>
+
+      <section class="panel" aria-labelledby="gamepads-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="gamepads-title">Connected gamepads</h2>
+            <p>Controller numbers below are browser indices plus one; they may not match the physical player labels.</p>
+          </div>
+        </div>
+        <div id="gamepad-list" class="gamepad-list">
+          <p id="empty-state" class="empty-state">No gamepads are currently visible to the browser.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="log-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="log-title">Diagnostic log</h2>
+            <p>Export a snapshot after testing both players, then compare it with a snapshot made on Windows.</p>
+          </div>
+          <div class="actions">
+            <button id="download-button" class="secondary" type="button">Download JSON</button>
+            <button id="clear-log-button" class="secondary" type="button">Clear log</button>
+          </div>
+        </div>
+        <ol id="event-log" class="event-log" aria-label="Gamepad connection events"></ol>
+      </section>
+    </main>
+
+    <footer>
+      <p>For reliable access, serve this directory from <code>localhost</code> or HTTPS. Safari, Chrome and Edge can differ in how they expose composite HID devices.</p>
+    </footer>
+    <div id="announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
