@@ -75,6 +75,13 @@ cmake -S . -B build \
 cmake --build build --parallel
 ```
 
+The **CMake** GitHub Actions workflow can also be started manually. A manual
+run always stores the installed UF2 files as a workflow artifact. To publish a
+GitHub Release as well, enter a unique `release_tag` such as `v0.1.0` in the
+**Run workflow** form. Leave the tag blank for an artifact-only build. Manual
+releases default to prereleases so experimental USB profiles are not presented
+as stable firmware accidentally.
+
 Updating the board
 ---
 

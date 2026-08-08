@@ -12,6 +12,15 @@ on:
           - Release
           - Debug
           - RelWithDebInfo
+      release_tag:
+        description: Optional tag to create and publish (for example, v0.1.0)
+        required: false
+        type: string
+      prerelease:
+        description: Mark a manually created release as a prerelease
+        required: true
+        default: true
+        type: boolean
   push:
   pull_request:
   release:
@@ -20,6 +29,9 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: ${{ inputs.build_type || 'Release' }}
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -39,7 +51,7 @@ jobs:
     env:
       PICO_SDK_PATH: $GITHUB_WORKSPACE/pico-sdk
       PIMORONI_PICO_LIBS: $GITHUB_WORKSPACE/pimoroni-pico
-      RELEASE_FILE: ${{github.event.repository.name}}-${{github.event.release.tag_name || github.sha}}
+      RELEASE_FILE: ${{github.event.repository.name}}-${{github.event.release.tag_name || inputs.release_tag || github.sha}}
 
     steps:
     - name: Checkout Code
@@ -100,30 +112,45 @@ jobs:
         path: ${{runner.workspace}}/build/install
 
     - name: Build Release Packages
-      if: github.event_name == 'release'
+      if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: |
         cmake --build . --config $BUILD_TYPE --target package -j 2
 
-    - name: Upload .zip
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
+    - name: Create GitHub Release
+      if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      with:
-        asset_path: ${{runner.workspace}}/build/${{env.RELEASE_FILE}}.zip
-        upload_url: ${{github.event.release.upload_url}}
-        asset_name: ${{env.RELEASE_FILE}}.zip
-        asset_content_type: application/zip
+        GH_TOKEN: ${{github.token}}
+        RELEASE_TAG: ${{inputs.release_tag}}
+        IS_PRERELEASE: ${{inputs.prerelease}}
+      run: |
+        if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+          echo "Invalid release tag: $RELEASE_TAG" >&2
+          exit 1
+        fi
 
-    - name: Upload .tar.gz
+        release_args=(--target "$GITHUB_SHA" --generate-notes)
+        if [[ "$IS_PRERELEASE" == "true" ]]; then
+          release_args+=(--prerelease)
+        fi
+
+        gh release create "$RELEASE_TAG" \
+          "${RELEASE_FILE}.zip" \
+          "${RELEASE_FILE}.tar.gz" \
+          "${release_args[@]}"
+
+    - name: Upload packages to existing GitHub Release
       if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      with:
-        asset_path: ${{runner.workspace}}/build/${{env.RELEASE_FILE}}.tar.gz
-        upload_url: ${{github.event.release.upload_url}}
-        asset_name: ${{env.RELEASE_FILE}}.tar.gz
-        asset_content_type: application/octet-stream
+        GH_TOKEN: ${{github.token}}
+        RELEASE_TAG: ${{github.event.release.tag_name}}
+      run: |
+        gh release upload "$RELEASE_TAG" \
+          "${RELEASE_FILE}.zip" \
+          "${RELEASE_FILE}.tar.gz" \
+          --clobber
