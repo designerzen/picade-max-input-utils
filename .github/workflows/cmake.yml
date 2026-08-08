@@ -27,13 +27,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-24.04
             name: Linux
             cache-key: linux
             cmake-args: '-DPIMORONI_PICO_PATH=$GITHUB_WORKSPACE/pimoroni-pico -DPICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk'
             apt-packages: clang-tidy gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
     runs-on: ${{matrix.os}}
+    timeout-minutes: 30
 
     env:
       PICO_SDK_PATH: $GITHUB_WORKSPACE/pico-sdk
