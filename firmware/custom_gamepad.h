@@ -15,17 +15,17 @@
     HID_REPORT_COUNT   ( 2                                      ) ,\
     HID_REPORT_SIZE    ( 8                                      ) ,\
     HID_INPUT          ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ) ,\
-    /* 15 bit Button Map */ \
+    /* 18 bit Button Map */ \
     HID_USAGE_PAGE     ( HID_USAGE_PAGE_BUTTON                  ) ,\
     HID_USAGE_MIN      ( 1                                      ) ,\
-    HID_USAGE_MAX      ( 15                                     ) ,\
+    HID_USAGE_MAX      ( 18                                     ) ,\
     HID_LOGICAL_MIN    ( 0                                      ) ,\
     HID_LOGICAL_MAX    ( 1                                      ) ,\
-    HID_REPORT_COUNT   ( 15                                     ) ,\
+    HID_REPORT_COUNT   ( 18                                     ) ,\
     HID_REPORT_SIZE    ( 1                                      ) ,\
     HID_INPUT          ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ) ,\
-    /* 1 bit reserved */ \
-    HID_REPORT_COUNT ( 1                                      )  ,\
+    /* 14 bits reserved: pad the button field to 32 bits */ \
+    HID_REPORT_COUNT ( 14                                     )  ,\
     HID_REPORT_SIZE  ( 1                                      )  ,\
     HID_INPUT        ( HID_CONSTANT                           )  ,\
   HID_COLLECTION_END \
@@ -34,10 +34,10 @@ typedef struct TU_ATTR_PACKED
 {
   int8_t  x;         ///< Delta x  movement of left analog-stick
   int8_t  y;         ///< Delta y  movement of left analog-stick
-  uint16_t buttons;  ///< Buttons mask for currently pressed buttons
+  uint32_t buttons;  ///< Buttons mask for currently pressed buttons
 } picade_gamepad_report_t;
 
-static inline bool picade_gamepad_report(uint8_t instance, uint8_t report_id, int8_t x, int8_t y, uint16_t buttons)
+static inline bool picade_gamepad_report(uint8_t instance, uint8_t report_id, int8_t x, int8_t y, uint32_t buttons)
 {
   picade_gamepad_report_t report =
   {

@@ -17,7 +17,8 @@ bool operator==(const input_t& lhs, const input_t& rhs)
         && lhs.p1_x == rhs.p1_x
         && lhs.p1_y == rhs.p1_y
         && lhs.p2_x == rhs.p2_x
-        && lhs.p2_y == rhs.p2_y;
+        && lhs.p2_y == rhs.p2_y
+        && lhs.encoder == rhs.encoder;
 }
 
 bool operator!=(const input_t& lhs, const input_t& rhs)
@@ -30,6 +31,13 @@ void gpio_setup_input(uint pin) {
     gpio_set_function(pin, GPIO_FUNC_SIO);
     gpio_set_dir(pin, false);
     gpio_set_pulls(pin, false, true);
+}
+
+void gpio_setup_input_pullup(uint pin) {
+    gpio_init(pin);
+    gpio_set_function(pin, GPIO_FUNC_SIO);
+    gpio_set_dir(pin, false);
+    gpio_set_pulls(pin, true, false);
 }
 
 void gpio_setup_output(PIO pio, uint pin) {
@@ -54,6 +62,13 @@ void picade_init() {
     gpio_setup_input(10);
     gpio_setup_input(11);
     gpio_setup_input(12);
+
+    // The three exposed ADC channels are also ordinary GPIO inputs. The
+    // Picade Max encoder is passive and connects each signal to GND, so it
+    // needs pull-ups and must not be connected to the adjacent 3V3 pin.
+    gpio_setup_input_pullup(26); // ADC0: encoder A
+    gpio_setup_input_pullup(27); // ADC1: encoder B
+    gpio_setup_input_pullup(28); // ADC2: encoder push switch
 
     // Mux pins
     gpio_setup_output(pio, 0);
@@ -114,6 +129,92 @@ void picade_init() {
     pio_sm_set_enabled(pio, sm, true);
 }
 
+namespace {
+constexpr uint ENCODER_A_PIN = 26;
+constexpr uint ENCODER_B_PIN = 27;
+constexpr uint ENCODER_PUSH_PIN = 28;
+constexpr int8_t ENCODER_TRANSITIONS[16] = {
+     0, -1,  1,  0,
+     1,  0,  0, -1,
+    -1,  0,  0,  1,
+     0,  1, -1,  0,
+};
+constexpr int8_t TRANSITIONS_PER_DETENT = 4;
+constexpr uint8_t ENCODER_PULSE_MS = 8;
+constexpr uint8_t ENCODER_GAP_MS = 2;
+constexpr uint8_t PUSH_DEBOUNCE_MS = 5;
+
+uint8_t read_encoder_buttons() {
+    static bool initialized = false;
+    static uint8_t previous_state = 0;
+    static int8_t transition_count = 0;
+    static int8_t pending_steps = 0;
+    static int8_t active_direction = 0;
+    static uint8_t pulse_remaining = 0;
+    static uint8_t gap_remaining = 0;
+    static uint8_t push_integrator = 0;
+    static bool push_pressed = false;
+
+    const uint8_t current_state =
+        (gpio_get(ENCODER_A_PIN) << 1) | gpio_get(ENCODER_B_PIN);
+
+    if (!initialized) {
+        previous_state = current_state;
+        initialized = true;
+    } else if (current_state != previous_state) {
+        const int8_t transition = ENCODER_TRANSITIONS[(previous_state << 2) | current_state];
+        previous_state = current_state;
+
+        // A diagonal jump means one or more phases were missed. Discard the
+        // partial detent rather than manufacturing a turn in either direction.
+        if (transition == 0) {
+            transition_count = 0;
+        } else {
+            transition_count += transition;
+        }
+
+        if (transition_count >= TRANSITIONS_PER_DETENT) {
+            if (pending_steps < 127) pending_steps++;
+            transition_count = 0;
+        } else if (transition_count <= -TRANSITIONS_PER_DETENT) {
+            if (pending_steps > -128) pending_steps--;
+            transition_count = 0;
+        }
+    }
+
+    // Queue detents and give every one a visible press and release. This is
+    // non-blocking, so USB service and the normal Picade scan continue at 1kHz.
+    if (pulse_remaining > 0) {
+        pulse_remaining--;
+        if (pulse_remaining == 0) {
+            active_direction = 0;
+            gap_remaining = ENCODER_GAP_MS;
+        }
+    } else if (gap_remaining > 0) {
+        gap_remaining--;
+    } else if (pending_steps != 0) {
+        active_direction = pending_steps > 0 ? 1 : -1;
+        pending_steps += pending_steps > 0 ? -1 : 1;
+        pulse_remaining = ENCODER_PULSE_MS;
+    }
+
+    const bool raw_push_pressed = !gpio_get(ENCODER_PUSH_PIN);
+    if (raw_push_pressed) {
+        if (push_integrator < PUSH_DEBOUNCE_MS) push_integrator++;
+    } else if (push_integrator > 0) {
+        push_integrator--;
+    }
+    if (push_integrator == PUSH_DEBOUNCE_MS) push_pressed = true;
+    if (push_integrator == 0) push_pressed = false;
+
+    uint8_t buttons = 0;
+    if (active_direction > 0) buttons |= ENCODER_CLOCKWISE;
+    if (active_direction < 0) buttons |= ENCODER_COUNTERCLOCKWISE;
+    if (push_pressed) buttons |= ENCODER_PUSH;
+    return buttons;
+}
+} // namespace
+
 // This serves to debounce the falling edge of buttons,
 // particarly the joystick which can show contact bounce within the first 2ms
 // A rising edge is always reported instantly, meaning latency is never affected by debounce
@@ -133,8 +234,8 @@ static inline uint16_t map_button(uint8_t *input, uint8_t index, uint8_t byte, u
 }
 
 input_t picade_get_input() {
-    static input_t last_in = {0, 0, 0, 0, 0, 0, 0, false};
-    input_t in = {0, 0, 0, 0, 0, 0, 0, false};
+    static input_t last_in = {};
+    input_t in = {};
     uint8_t input_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
     for(auto i = 0u; i < 8; i++) {
@@ -205,6 +306,8 @@ input_t picade_get_input() {
     if(in.p2 & JOYSTICK_RIGHT){in.p2_x =  127;}
     if(in.p2 & JOYSTICK_UP)   {in.p2_y = -127;}
     if(in.p2 & JOYSTICK_DOWN) {in.p2_y =  127;}
+
+    in.encoder = read_encoder_buttons();
 
     in.changed = in != last_in;
     last_in = in;

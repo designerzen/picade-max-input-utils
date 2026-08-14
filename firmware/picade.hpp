@@ -13,6 +13,10 @@ const uint8_t UTIL_P1_X2     = 0b001000;
 const uint8_t UTIL_P2_X1     = 0b010000;
 const uint8_t UTIL_P2_X2     = 0b100000;
 
+const uint8_t ENCODER_CLOCKWISE        = 0b001;
+const uint8_t ENCODER_COUNTERCLOCKWISE = 0b010;
+const uint8_t ENCODER_PUSH             = 0b100;
+
 struct input_t {
     uint16_t p1;
     uint16_t p2;
@@ -21,6 +25,7 @@ struct input_t {
     int8_t p1_y;
     int8_t p2_x;
     int8_t p2_y;
+    uint8_t encoder;
     bool changed;
 };
 

@@ -16,6 +16,12 @@ const elements = {
   announcer: document.querySelector('#announcer'),
 };
 
+const encoderButtons = new Map([
+  [15, { key: 'clockwise', label: 'Encoder clockwise', shortLabel: 'Encoder CW', buttonNumber: 16 }],
+  [16, { key: 'counterclockwise', label: 'Encoder counter-clockwise', shortLabel: 'Encoder CCW', buttonNumber: 17 }],
+  [17, { key: 'push', label: 'Encoder push', shortLabel: 'Encoder push', buttonNumber: 18 }],
+]);
+
 const state = {
   running: false,
   animationFrame: null,
@@ -36,7 +42,13 @@ function readGamepads() {
 
 function getObservation(index) {
   if (!state.observations.has(index)) {
-    state.observations.set(index, { button: false, axis: false });
+    state.observations.set(index, {
+      button: false,
+      axis: false,
+      encoder: { clockwise: false, counterclockwise: false, push: false },
+      encoderCounts: { clockwise: 0, counterclockwise: 0, push: 0 },
+      encoderDown: { clockwise: false, counterclockwise: false, push: false },
+    });
   }
   return state.observations.get(index);
 }
@@ -144,7 +156,13 @@ function createCard(gamepad) {
     indicator.className = 'button-indicator';
     const label = document.createElement('span');
     label.className = 'button-label';
-    label.textContent = `Button ${index}`;
+    const encoderButton = encoderButtons.get(index);
+    if (encoderButton) {
+      indicator.classList.add('is-encoder');
+      label.textContent = `${encoderButton.shortLabel} (B${encoderButton.buttonNumber})`;
+    } else {
+      label.textContent = `Button ${index + 1}`;
+    }
     const output = document.createElement('output');
     output.className = 'button-value';
     output.textContent = button.value.toFixed(3);
@@ -181,9 +199,22 @@ function updateCard(gamepad) {
     card.axisNodes[index].output.textContent = value.toFixed(3);
   });
   gamepad.buttons.forEach((button, index) => {
-    if (button.pressed || button.value > 0.1) observation.button = true;
-    card.buttonNodes[index].indicator.classList.toggle('is-active', button.pressed || button.value > 0.1);
-    card.buttonNodes[index].output.textContent = `${button.value.toFixed(3)}${button.pressed ? ' pressed' : ''}${button.touched ? ' touched' : ''}`;
+    const active = button.pressed || button.value > 0.1;
+    if (active) observation.button = true;
+    card.buttonNodes[index].indicator.classList.toggle('is-active', active);
+
+    const encoderButton = encoderButtons.get(index);
+    if (encoderButton) {
+      const { key } = encoderButton;
+      if (active && !observation.encoderDown[key]) {
+        observation.encoder[key] = true;
+        observation.encoderCounts[key]++;
+      }
+      observation.encoderDown[key] = active;
+      card.buttonNodes[index].output.textContent = `${active ? 'Pressed' : 'Released'} · seen ${observation.encoderCounts[key]}`;
+    } else {
+      card.buttonNodes[index].output.textContent = `${button.value.toFixed(3)}${button.pressed ? ' pressed' : ''}${button.touched ? ' touched' : ''}`;
+    }
   });
   card.timestamp.textContent = gamepad.timestamp.toFixed(1);
   const observed = observation.button || observation.axis;
@@ -216,12 +247,34 @@ function updateChecks(gamepads) {
   const controllerState = gamepads.length >= 2 ? 'pass' : gamepads.length === 1 ? 'fail' : 'pending';
   addCheck(fragment, 'Two controllers exposed', `${gamepads.length} controller${gamepads.length === 1 ? '' : 's'} visible. The Picade target is at least two.`, controllerState);
   gamepads.forEach((gamepad) => {
-    const layoutOkay = gamepad.axes.length >= 2 && gamepad.buttons.length >= 15;
+    const layoutOkay = gamepad.axes.length >= 2 && gamepad.buttons.length >= 18;
     addCheck(fragment, `Controller ${gamepad.index + 1} layout`, `${gamepad.axes.length} axes and ${gamepad.buttons.length} buttons reported.`, layoutOkay ? 'pass' : 'warn');
     const observation = getObservation(gamepad.index);
     const seen = observation.button || observation.axis;
     addCheck(fragment, `Controller ${gamepad.index + 1} input`, seen ? 'A button or axis event has been observed.' : 'Press a button or move the joystick for this player.', seen ? 'pass' : 'pending');
   });
+
+  const encoderControllers = gamepads.filter((gamepad) => gamepad.buttons.length >= 18);
+  if (encoderControllers.length) {
+    for (const encoderButton of encoderButtons.values()) {
+      const observations = encoderControllers.map((gamepad) => ({
+        gamepad,
+        observation: getObservation(gamepad.index),
+      }));
+      const count = observations.reduce((total, item) => total + item.observation.encoderCounts[encoderButton.key], 0);
+      const seenOn = observations
+        .filter((item) => item.observation.encoder[encoderButton.key])
+        .map((item) => `Controller ${item.gamepad.index + 1}`);
+      addCheck(
+        fragment,
+        encoderButton.label,
+        count ? `${count} event${count === 1 ? '' : 's'} observed on ${seenOn.join(', ')}.` : `Operate ${encoderButton.label.toLowerCase()} to test button ${encoderButton.buttonNumber}.`,
+        count ? 'pass' : 'pending',
+      );
+    }
+  } else {
+    addCheck(fragment, 'Rotary encoder report', 'No controller exposes buttons 16–18. Flash the encoder-enabled firmware, reconnect the Picade, and start monitoring.', gamepads.length ? 'fail' : 'pending');
+  }
   elements.checks.replaceChildren(fragment);
 }
 

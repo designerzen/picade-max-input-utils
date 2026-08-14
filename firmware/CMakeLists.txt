@@ -46,16 +46,16 @@ function(add_picade_firmware TARGET PROFILE DEVICE_VERSION)
 endfunction()
 
 # Original Pimoroni HID + keyboard + CDC layout, retained as a control build.
-add_picade_firmware(picade-max-input-legacy 0 0x0100)
+add_picade_firmware(picade-max-input-legacy 0 0x0110)
 
 # Minimal two-interface layout. This establishes whether keyboard/CDC/IAD
 # composition is what prevents macOS from exposing Player 2.
-add_picade_firmware(picade-max-input-macos-hid 1 0x0200)
+add_picade_firmware(picade-max-input-macos-hid 1 0x0210)
 
 # One HID interface containing two top-level collections with distinct report
 # IDs. This is the primary workaround for hosts that collapse duplicate HID
 # interfaces belonging to one physical USB device.
-add_picade_firmware(picade-max-input-macos-dual-report 2 0x0201)
+add_picade_firmware(picade-max-input-macos-dual-report 2 0x0211)
 
 # Set up files for the release packages
 install(FILES
