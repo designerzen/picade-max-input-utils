@@ -69,11 +69,14 @@ The project currently follows the upstream Pico SDK build arrangement. Set
 `PICO_SDK_PATH` and `PIMORONI_PICO_PATH`, then configure and build with CMake:
 
 ```sh
-cmake -S . -B build \
+cmake -S firmware -B build/firmware \
   -DPICO_SDK_PATH=/path/to/pico-sdk \
   -DPIMORONI_PICO_PATH=/path/to/pimoroni-pico
-cmake --build build --parallel
+cmake --build build/firmware --parallel
 ```
+
+All RP2040 firmware sources and CMake support files live in `firmware/`.
+Host-side utilities are kept separately in `tools/`.
 
 The **CMake** GitHub Actions workflow can also be started manually. A manual
 run always stores the installed UF2 files as a workflow artifact. To publish a

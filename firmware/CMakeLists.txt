@@ -62,7 +62,7 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-legacy.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-hid.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-dual-report.uf2
-    ${CMAKE_CURRENT_LIST_DIR}/README.md
+    ${CMAKE_CURRENT_LIST_DIR}/../README.md
     DESTINATION .
 )
 
