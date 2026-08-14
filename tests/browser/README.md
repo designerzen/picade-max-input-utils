@@ -25,13 +25,28 @@ other than 8000.
 The page does not send data anywhere. Use **Download JSON** after exercising
 both players to save a browser, controller, axis, button and event snapshot.
 
+## Plasma lights
+
+In desktop Chrome or Edge, select **Connect Plasma** and approve the Picade Max
+serial interface. The page uses PhotoSYNTH's Picade protocol at 115200 baud and
+supports both known Picade USB IDs. **Run colour demo** flashes all 32 Plasma
+control groups. While gamepad monitoring is active, the 15 standard buttons
+for both players illuminate their matching physical Plasma connections.
+
+The combined `picade-max-input-macos-dual-report-plasma.uf2` image exposes the
+two gamepads and the Plasma serial interface together. HID-only firmware cannot
+be controlled through Web Serial because it deliberately contains no CDC
+interface.
+
 ## Expected result
 
 For a working two-controller firmware profile, the page should show:
 
 - `2` under **Controllers exposed**;
 - two separate controller cards;
-- at least two axes and 15 buttons on each card; and
+- at least two axes and 18 buttons on the Player 1 card;
+- named clockwise, counter-clockwise and encoder-push checks; and
+- a connected Plasma interface when lighting is being tested; and
 - **Input observed** for both controllers after testing both player controls.
 
 If the board LEDs react for both players but only one controller card appears,

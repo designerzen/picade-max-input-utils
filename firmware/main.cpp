@@ -77,9 +77,15 @@ enum {
   ITF_GAMEPAD_1,
   ITF_GAMEPAD_2,
 };
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
+enum {
+  ITF_GAMEPADS,
+};
 #else
 enum {
   ITF_GAMEPADS,
+  ITF_SERIAL,
+  ITF_SERIAL_DATA,
 };
 #endif
 
@@ -285,7 +291,7 @@ void hid_task(void)
   }
 #endif
 
-#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
+#if PICADE_USB_IS_DUAL_REPORT
   // Both players share one HID interrupt endpoint. Alternate reports so a
   // transfer is never submitted while the endpoint is still busy.
   static uint8_t next_player = 0;

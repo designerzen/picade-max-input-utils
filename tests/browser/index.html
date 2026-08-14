@@ -14,7 +14,7 @@
       <div>
         <p class="eyebrow">Picade Max Input Utils</p>
         <h1>Two-player gamepad test</h1>
-        <p class="lede">See exactly which controllers, axes and buttons the browser receives from the USB device.</p>
+        <p class="lede">Test controllers, the rotary encoder and Plasma lights together from one page.</p>
       </div>
       <span id="monitor-status" class="status status-idle">Stopped</span>
     </header>
@@ -39,6 +39,30 @@
           <div><dt>Last scan</dt><dd id="last-scan">Not started</dd></div>
         </dl>
         <p class="privacy-note">Everything runs locally in this tab. No gamepad data is uploaded.</p>
+      </section>
+
+      <section class="panel plasma-panel" aria-labelledby="plasma-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="plasma-title">Plasma lights</h2>
+            <p>Connect the Picade serial interface, run a 32-control colour demo, or start gamepad monitoring so each mapped button lights while pressed.</p>
+          </div>
+          <span id="plasma-status" class="status status-idle">Disconnected</span>
+        </div>
+        <dl class="environment-grid">
+          <div><dt>Web Serial API</dt><dd id="serial-api-value">Checking…</dd></div>
+          <div><dt>Plasma interfaces</dt><dd id="plasma-count">0</dd></div>
+          <div><dt>Protocol</dt><dd>multiverse:data</dd></div>
+          <div><dt>Speed</dt><dd>115200 baud</dd></div>
+        </dl>
+        <div class="actions plasma-actions">
+          <button id="plasma-connect-button" type="button">Connect Plasma</button>
+          <button id="plasma-add-button" class="secondary" type="button">Add another</button>
+          <button id="plasma-demo-button" class="secondary" type="button" disabled>Run colour demo</button>
+          <button id="plasma-clear-button" class="secondary" type="button" disabled>Clear lights</button>
+          <button id="plasma-disconnect-button" class="secondary" type="button" disabled>Disconnect all</button>
+        </div>
+        <p class="privacy-note">Chrome or Edge will show a device chooser the first time. Previously approved Picade interfaces reconnect without another prompt.</p>
       </section>
 
       <section class="panel" aria-labelledby="checks-title">

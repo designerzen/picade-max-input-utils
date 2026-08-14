@@ -56,12 +56,23 @@ enum {
 };
 #define EPNUM_HID1           0x81
 #define EPNUM_HID2           0x82
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
 enum {
   ITF_GAMEPADS,
   ITF_NUM_TOTAL
 };
 #define EPNUM_HID1           0x81
+#else
+enum {
+  ITF_GAMEPADS,
+  ITF_CDC_0,
+  ITF_CDC_0_DATA,
+  ITF_NUM_TOTAL
+};
+#define EPNUM_CDC_0_NOTIF    0x81
+#define EPNUM_CDC_0_OUT      0x02
+#define EPNUM_CDC_0_IN       0x82
+#define EPNUM_HID1           0x83
 #endif
 
 //--------------------------------------------------------------------+
@@ -76,7 +87,7 @@ tusb_desc_device_t const desc_device =
     .bLength            = sizeof(tusb_desc_device_t),
     .bDescriptorType    = TUSB_DESC_DEVICE,
     .bcdUSB             = 0x0200,
-#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_LEGACY
+#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_LEGACY || PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT_CDC
     .bDeviceClass       = TUSB_CLASS_MISC,
     .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
     .bDeviceProtocol    = MISC_PROTOCOL_IAD,
@@ -115,7 +126,7 @@ void usb_serial_init(void) {
 // HID Report Descriptor
 //--------------------------------------------------------------------+
 
-#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
+#if PICADE_USB_IS_DUAL_REPORT
 uint8_t const desc_hid_report_gamepads[] =
 {
   PICADE_HID_GAMEPAD(HID_REPORT_ID(1)),
@@ -138,7 +149,7 @@ uint8_t const desc_hid_report_keyboard[] =
 // Descriptor contents must exist long enough for transfer to complete
 uint8_t const * tud_hid_descriptor_report_cb(uint8_t itf)
 {
-#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
+#if PICADE_USB_IS_DUAL_REPORT
   if (itf == ITF_GAMEPADS)
   {
     return desc_hid_report_gamepads;
@@ -173,8 +184,11 @@ uint8_t const * tud_hid_descriptor_report_cb(uint8_t itf)
 #elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_HID_ONLY
 #define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + (2 * TUD_HID_DESC_LEN))
 #define CONFIG_ATTRIBUTES 0
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
 #define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN)
+#define CONFIG_ATTRIBUTES 0
+#else
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_CDC_DESC_LEN)
 #define CONFIG_ATTRIBUTES 0
 #endif
 
@@ -184,7 +198,7 @@ uint8_t const desc_configuration[] =
   TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, CONFIG_ATTRIBUTES, 100),
 
   // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
+#if PICADE_USB_IS_DUAL_REPORT
   TUD_HID_DESCRIPTOR(ITF_GAMEPADS, 8, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report_gamepads), EPNUM_HID1, CFG_TUD_HID_EP_BUFSIZE, 1),
 #else
   TUD_HID_DESCRIPTOR(ITF_GAMEPAD_1, 4, HID_ITF_PROTOCOL_NONE,     sizeof(desc_hid_report_gamepad1), EPNUM_HID1, CFG_TUD_HID_EP_BUFSIZE, 1),
@@ -192,9 +206,9 @@ uint8_t const desc_configuration[] =
 #if PICADE_USB_HAS_KEYBOARD
   TUD_HID_DESCRIPTOR(ITF_KEYBOARD,  6, HID_ITF_PROTOCOL_KEYBOARD, sizeof(desc_hid_report_keyboard), EPNUM_HID3, CFG_TUD_HID_EP_BUFSIZE, 1),
 #endif
+#endif
 #if PICADE_USB_HAS_CDC
   TUD_CDC_DESCRIPTOR(ITF_CDC_0,     7, EPNUM_CDC_0_NOTIF, 8, EPNUM_CDC_0_OUT, EPNUM_CDC_0_IN, 64),
-#endif
 #endif
 };
 
@@ -220,8 +234,10 @@ char const* string_desc_arr [] =
   "Picade Max",                   // 2: Product
 #elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_HID_ONLY
   "Picade Max macOS HID",         // 2: Product
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
   "Picade Max Dual Report",       // 2: Product
+#else
+  "Picade Max Dual + Plasma",     // 2: Product
 #endif
   usb_serial,                     // 3: Serials, should use chip ID
   "GamePad 1",

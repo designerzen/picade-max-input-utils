@@ -53,6 +53,10 @@ be tested independently from the Picade hardware:
   two Game Pad application collections. Player 1 uses report ID 1 and Player 2
   uses report ID 2. This is intended for hosts that collapse two similar HID
   interfaces belonging to one physical USB device.
+* `picade-max-input-macos-dual-report-plasma.uf2` keeps that dual-report layout
+  and adds the CDC serial interface required for Plasma lights. Use this image
+  when gamepad input, the rotary encoder and browser-controlled lighting must
+  work together.
 
 Test the `macos-hid` image first. If macOS or the target application still
 shows only one controller, test `macos-dual-report` and record whether IOHID and
@@ -61,6 +65,16 @@ the application expose one or two logical controllers.
 The HID-only builds deliberately disable Plasma serial control. Once the
 working macOS layout is established, Plasma support can be added back without
 reintroducing the inactive keyboard interface.
+
+Plasma browser control
+---
+
+The GitHub Pages tester can connect to one or more Picade Max CDC interfaces
+with Web Serial, run a 32-control colour demo, and illuminate the matching
+physical Plasma control while any of the 15 standard buttons for either player
+is held. It uses the PhotoSYNTH `multiverse:data` frame protocol at 115200 baud
+and supports both known Picade USB IDs. Web Serial requires HTTPS or localhost
+and a supporting desktop browser such as Chrome or Edge.
 
 Building
 ---

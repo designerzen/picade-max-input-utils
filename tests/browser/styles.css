@@ -134,6 +134,8 @@ main { display: grid; gap: 1rem; }
 dt { color: var(--muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
 dd { margin: 0.18rem 0 0; font-weight: 700; overflow-wrap: anywhere; }
 .privacy-note { margin: 0.8rem 0 0; font-size: 0.9rem; }
+.plasma-panel { border-color: color-mix(in srgb, var(--accent) 48%, var(--border)); }
+.plasma-actions { margin-top: 1rem; }
 
 .check-list { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
 .check-item { display: grid; grid-template-columns: auto 1fr; gap: 0.7rem; align-items: start; padding: 0.7rem; border-radius: 0.55rem; background: var(--surface-muted); }
@@ -153,6 +155,7 @@ meter { width: 100%; accent-color: var(--accent); }
 .axis-value { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; text-align: right; }
 .button-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: 0.5rem; }
 .button-indicator { min-height: 4.2rem; padding: 0.55rem; border: 0.0625rem solid var(--border); border-radius: 0.55rem; background: var(--surface); }
+.button-indicator.is-encoder { border-width: 0.125rem; border-color: var(--accent); }
 .button-indicator.is-active { border-color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--surface)); }
 .button-label, .button-value { display: block; }
 .button-label { font-weight: 800; }

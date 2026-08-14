@@ -57,11 +57,16 @@ add_picade_firmware(picade-max-input-macos-hid 1 0x0210)
 # interfaces belonging to one physical USB device.
 add_picade_firmware(picade-max-input-macos-dual-report 2 0x0211)
 
+# The proven dual-report gamepad layout plus the CDC interface required by the
+# browser/PhotoSYNTH Plasma protocol.
+add_picade_firmware(picade-max-input-macos-dual-report-plasma 3 0x0310)
+
 # Set up files for the release packages
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-legacy.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-hid.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-dual-report.uf2
+    ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-dual-report-plasma.uf2
     ${CMAKE_CURRENT_LIST_DIR}/../README.md
     DESTINATION .
 )

@@ -1,3 +1,5 @@
+import { PicadePlasmaManager } from './picade-plasma.js';
+
 const elements = {
   api: document.querySelector('#api-value'),
   secure: document.querySelector('#secure-value'),
@@ -14,6 +16,14 @@ const elements = {
   download: document.querySelector('#download-button'),
   clearLog: document.querySelector('#clear-log-button'),
   announcer: document.querySelector('#announcer'),
+  serialApi: document.querySelector('#serial-api-value'),
+  plasmaCount: document.querySelector('#plasma-count'),
+  plasmaStatus: document.querySelector('#plasma-status'),
+  plasmaConnect: document.querySelector('#plasma-connect-button'),
+  plasmaAdd: document.querySelector('#plasma-add-button'),
+  plasmaDemo: document.querySelector('#plasma-demo-button'),
+  plasmaClear: document.querySelector('#plasma-clear-button'),
+  plasmaDisconnect: document.querySelector('#plasma-disconnect-button'),
 };
 
 const encoderButtons = new Map([
@@ -30,6 +40,8 @@ const state = {
   lastIndices: new Set(),
   events: [],
 };
+
+const plasma = new PicadePlasmaManager();
 
 const hasGamepadApi = typeof navigator.getGamepads === 'function';
 elements.api.textContent = hasGamepadApi ? 'Available' : 'Unavailable';
@@ -48,6 +60,7 @@ function getObservation(index) {
       encoder: { clockwise: false, counterclockwise: false, push: false },
       encoderCounts: { clockwise: 0, counterclockwise: 0, push: 0 },
       encoderDown: { clockwise: false, counterclockwise: false, push: false },
+      buttonDown: [],
     });
   }
   return state.observations.get(index);
@@ -184,7 +197,7 @@ function createCard(gamepad) {
   };
 }
 
-function updateCard(gamepad) {
+function updateCard(gamepad, playerSlot) {
   let card = state.cards.get(gamepad.index);
   if (!card || card.axisNodes.length !== gamepad.axes.length || card.buttonNodes.length !== gamepad.buttons.length) {
     card?.article.remove();
@@ -200,6 +213,9 @@ function updateCard(gamepad) {
   });
   gamepad.buttons.forEach((button, index) => {
     const active = button.pressed || button.value > 0.1;
+    const wasActive = Boolean(observation.buttonDown[index]);
+    if (active !== wasActive) plasma.setGamepadButton(playerSlot, index, active);
+    observation.buttonDown[index] = active;
     if (active) observation.button = true;
     card.buttonNodes[index].indicator.classList.toggle('is-active', active);
 
@@ -243,6 +259,11 @@ function updateChecks(gamepads) {
   const fragment = document.createDocumentFragment();
   addCheck(fragment, 'Gamepad API', hasGamepadApi ? 'This browser implements navigator.getGamepads().' : 'Use a current version of Safari, Chrome or Edge.', hasGamepadApi ? 'pass' : 'fail');
   addCheck(fragment, 'Secure page', window.isSecureContext ? 'This page can request gamepad data.' : 'Serve this directory on localhost or HTTPS.', window.isSecureContext ? 'pass' : 'fail');
+  addCheck(fragment, 'Web Serial API', plasma.supported ? 'Plasma control is available in this browser.' : 'Use desktop Chrome or Edge for Plasma control.', plasma.supported ? 'pass' : 'warn');
+  addCheck(fragment, 'Plasma connection', plasma.connectedCount ? `${plasma.connectedCount} Picade Plasma interface${plasma.connectedCount === 1 ? '' : 's'} connected.` : 'Select Connect Plasma and approve the Picade serial interface.', plasma.connectedCount ? 'pass' : 'pending');
+  if (plasma.connectedCount) {
+    addCheck(fragment, 'Plasma lighting test', plasma.demoSeen || plasma.inputSeen ? 'A demo or mapped gamepad lighting event has been sent.' : 'Run the demo or press a mapped Picade button.', plasma.demoSeen || plasma.inputSeen ? 'pass' : 'pending');
+  }
   addCheck(fragment, 'Monitoring', state.running ? 'The live animation-frame scan is running.' : 'Select Start monitoring to begin.', state.running ? 'pass' : 'pending');
   const controllerState = gamepads.length >= 2 ? 'pass' : gamepads.length === 1 ? 'fail' : 'pending';
   addCheck(fragment, 'Two controllers exposed', `${gamepads.length} controller${gamepads.length === 1 ? '' : 's'} visible. The Picade target is at least two.`, controllerState);
@@ -284,7 +305,10 @@ function reconcileConnections(gamepads) {
     if (!state.lastIndices.has(gamepad.index)) addLog(`Controller ${gamepad.index + 1} connected: ${gamepad.id || 'unknown device'}`, true);
   }
   for (const index of state.lastIndices) {
-    if (!currentIndices.has(index)) addLog(`Controller ${index + 1} disconnected.`, true);
+    if (!currentIndices.has(index)) {
+      addLog(`Controller ${index + 1} disconnected.`, true);
+      void plasma.clear();
+    }
   }
   for (const [index, card] of state.cards) {
     if (!currentIndices.has(index)) {
@@ -300,7 +324,9 @@ function scan() {
   state.animationFrame = null;
   const gamepads = readGamepads();
   reconcileConnections(gamepads);
-  gamepads.forEach(updateCard);
+  gamepads
+    .sort((first, second) => first.index - second.index)
+    .forEach((gamepad, playerSlot) => updateCard(gamepad, playerSlot));
   elements.empty.hidden = gamepads.length > 0;
   elements.count.textContent = String(gamepads.length);
   elements.lastScan.textContent = new Date().toLocaleTimeString();
@@ -315,6 +341,12 @@ function snapshot() {
     platform: navigator.userAgentData?.platform || navigator.platform || 'unknown',
     secureContext: window.isSecureContext,
     monitoring: state.running,
+    plasma: {
+      webSerialSupported: plasma.supported,
+      connectedInterfaces: plasma.connectedCount,
+      demoObserved: plasma.demoSeen,
+      mappedInputObserved: plasma.inputSeen,
+    },
     checks: { expectedControllers: 2, controllersExposed: readGamepads().length },
     gamepads: readGamepads().map((gamepad) => ({
       index: gamepad.index,
@@ -352,6 +384,61 @@ elements.download.addEventListener('click', () => {
   addLog('Diagnostic JSON downloaded.');
 });
 
+function updatePlasmaControls() {
+  const connected = plasma.connectedCount > 0;
+  elements.serialApi.textContent = plasma.supported ? 'Available' : 'Unavailable';
+  elements.plasmaCount.textContent = String(plasma.connectedCount);
+  elements.plasmaStatus.textContent = connected ? 'Connected' : 'Disconnected';
+  elements.plasmaStatus.className = `status ${connected ? 'status-running' : 'status-idle'}`;
+  elements.plasmaConnect.disabled = !plasma.supported || connected;
+  elements.plasmaAdd.disabled = !plasma.supported;
+  elements.plasmaDemo.disabled = !connected;
+  elements.plasmaClear.disabled = !connected;
+  elements.plasmaDisconnect.disabled = !connected;
+  updateChecks(readGamepads());
+}
+
+async function withPlasmaAction(action, failureMessage) {
+  try {
+    await action();
+  } catch (error) {
+    if (error?.name !== 'NotFoundError' && error?.name !== 'AbortError') {
+      addLog(`${failureMessage}: ${error?.message || error}`, true);
+    }
+  } finally {
+    updatePlasmaControls();
+  }
+}
+
+elements.plasmaConnect.addEventListener('click', () => withPlasmaAction(async () => {
+  const authorized = await plasma.connectAuthorized();
+  if (!authorized) await plasma.requestAndConnect();
+}, 'Could not connect Plasma'));
+elements.plasmaAdd.addEventListener('click', () => withPlasmaAction(
+  () => plasma.requestAndConnect(),
+  'Could not add Plasma interface',
+));
+elements.plasmaDemo.addEventListener('click', () => withPlasmaAction(async () => {
+  addLog(`Plasma demo started on ${plasma.connectedCount} interface${plasma.connectedCount === 1 ? '' : 's'}.`);
+  await plasma.runDemo();
+  addLog('Plasma demo completed.', true);
+}, 'Plasma demo failed'));
+elements.plasmaClear.addEventListener('click', () => withPlasmaAction(
+  () => plasma.clear(),
+  'Could not clear Plasma lights',
+));
+elements.plasmaDisconnect.addEventListener('click', () => withPlasmaAction(
+  () => plasma.disconnectAll(),
+  'Could not disconnect Plasma',
+));
+plasma.addEventListener('change', (event) => {
+  const { type, device, error } = event.detail;
+  if (type === 'connect') addLog(`Plasma interface ${device.number} connected at 115200 baud.`, true);
+  if (type === 'disconnect') addLog(`Plasma interface ${device.number} disconnected.`, true);
+  if (type === 'error') addLog(`Plasma serial error: ${error?.message || error}`, true);
+  updatePlasmaControls();
+});
+
 window.addEventListener('gamepadconnected', (event) => {
   addLog(`Browser event: controller ${event.gamepad.index + 1} connected.`, true);
   if (state.running) scan();
@@ -371,6 +458,8 @@ document.addEventListener('visibilitychange', () => {
     scan();
   }
 });
+window.addEventListener('pagehide', () => { void plasma.clear(); });
 
 if (!hasGamepadApi) elements.start.disabled = true;
+updatePlasmaControls();
 updateChecks(readGamepads());
