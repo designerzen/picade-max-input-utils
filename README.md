@@ -41,7 +41,7 @@ Forked firmware
 
 This repository now includes the Pimoroni Picade Max Input firmware as the base
 for a macOS compatibility fork. The original input scanning and button mapping
-are retained. The build produces three firmware images so host enumeration can
+are retained. The build produces five firmware images so host enumeration can
 be tested independently from the Picade hardware:
 
 * `picade-max-input-legacy.uf2` preserves the original two gamepads, inactive
@@ -55,16 +55,18 @@ be tested independently from the Picade hardware:
   interfaces belonging to one physical USB device.
 * `picade-max-input-macos-dual-report-plasma.uf2` keeps that dual-report layout
   and adds the CDC serial interface required for Plasma lights. Use this image
-  when gamepad input, the rotary encoder and browser-controlled lighting must
-  work together.
+  to diagnose hosts that expose both report IDs as separate gamepads.
+* `picade-max-input-macos-hid-plasma.uf2` exposes Player 1 and Player 2 as two
+  separate HID interfaces and retains the CDC serial interface for Plasma
+  lights. This is the recommended macOS image when gamepad input, the rotary
+  encoder and browser-controlled lighting must work together.
 
 Test the `macos-hid` image first. If macOS or the target application still
 shows only one controller, test `macos-dual-report` and record whether IOHID and
 the application expose one or two logical controllers.
 
-The HID-only builds deliberately disable Plasma serial control. Once the
-working macOS layout is established, Plasma support can be added back without
-reintroducing the inactive keyboard interface.
+The HID-only builds deliberately disable Plasma serial control. Use the
+`macos-hid-plasma` build once the two-interface layout is confirmed.
 
 Plasma browser control
 ---
@@ -106,9 +108,18 @@ Updating the board
 2. Release the buttons when the `RPI-RP2` drive appears.
 3. Copy one UF2 image to the drive. The board will reboot automatically.
 
-The three builds use different USB device version numbers, but macOS may cache
+The five builds use different USB device version numbers, but macOS may cache
 USB/HID properties. Unplug the controller between tests. If results look stale,
 use a different physical USB port or reboot the Mac before comparing builds.
+
+Rotary encoder wiring
+---
+
+The encoder's common pin connects to **G**. With the adapted connector plugged
+into the Picade Max header labelled `G, ADC2, ADC1, ADC0, 3V3`, the three signal
+pins are `ADC2`/GPIO 28 for encoder A, `ADC1`/GPIO 27 for encoder B, and
+`ADC0`/GPIO 26 for the push switch. Leave `3V3` disconnected: the firmware uses
+internal pull-ups and the passive encoder closes each signal to common ground.
 
 Browser gamepad test
 ---

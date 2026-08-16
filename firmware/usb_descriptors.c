@@ -62,7 +62,7 @@ enum {
   ITF_NUM_TOTAL
 };
 #define EPNUM_HID1           0x81
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT_CDC
 enum {
   ITF_GAMEPADS,
   ITF_CDC_0,
@@ -73,6 +73,19 @@ enum {
 #define EPNUM_CDC_0_OUT      0x02
 #define EPNUM_CDC_0_IN       0x82
 #define EPNUM_HID1           0x83
+#else
+enum {
+  ITF_GAMEPAD_1,
+  ITF_GAMEPAD_2,
+  ITF_CDC_0,
+  ITF_CDC_0_DATA,
+  ITF_NUM_TOTAL
+};
+#define EPNUM_CDC_0_NOTIF    0x81
+#define EPNUM_CDC_0_OUT      0x02
+#define EPNUM_CDC_0_IN       0x82
+#define EPNUM_HID1           0x83
+#define EPNUM_HID2           0x84
 #endif
 
 //--------------------------------------------------------------------+
@@ -87,7 +100,7 @@ tusb_desc_device_t const desc_device =
     .bLength            = sizeof(tusb_desc_device_t),
     .bDescriptorType    = TUSB_DESC_DEVICE,
     .bcdUSB             = 0x0200,
-#if PICADE_USB_PROFILE == PICADE_USB_PROFILE_LEGACY || PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT_CDC
+#if PICADE_USB_HAS_CDC
     .bDeviceClass       = TUSB_CLASS_MISC,
     .bDeviceSubClass    = MISC_SUBCLASS_COMMON,
     .bDeviceProtocol    = MISC_PROTOCOL_IAD,
@@ -187,8 +200,11 @@ uint8_t const * tud_hid_descriptor_report_cb(uint8_t itf)
 #elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
 #define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN)
 #define CONFIG_ATTRIBUTES 0
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT_CDC
 #define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_CDC_DESC_LEN)
+#define CONFIG_ATTRIBUTES 0
+#else
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + (2 * TUD_HID_DESC_LEN) + TUD_CDC_DESC_LEN)
 #define CONFIG_ATTRIBUTES 0
 #endif
 
@@ -236,8 +252,10 @@ char const* string_desc_arr [] =
   "Picade Max macOS HID",         // 2: Product
 #elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT
   "Picade Max Dual Report",       // 2: Product
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT_CDC
   "Picade Max Dual + Plasma",     // 2: Product
+#else
+  "Picade Max HID + Plasma",      // 2: Product
 #endif
   usb_serial,                     // 3: Serials, should use chip ID
   "GamePad 1",

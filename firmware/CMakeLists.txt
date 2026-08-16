@@ -61,12 +61,18 @@ add_picade_firmware(picade-max-input-macos-dual-report 2 0x0211)
 # browser/PhotoSYNTH Plasma protocol.
 add_picade_firmware(picade-max-input-macos-dual-report-plasma 3 0x0310)
 
+# Two independent HID gamepad interfaces plus the CDC interface required by
+# browser/PhotoSYNTH Plasma control. Use this when macOS collapses the two
+# report-ID collections in the dual-report build into one Gamepad API device.
+add_picade_firmware(picade-max-input-macos-hid-plasma 4 0x0410)
+
 # Set up files for the release packages
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-legacy.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-hid.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-dual-report.uf2
     ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-dual-report-plasma.uf2
+    ${CMAKE_CURRENT_BINARY_DIR}/picade-max-input-macos-hid-plasma.uf2
     ${CMAKE_CURRENT_LIST_DIR}/../README.md
     DESTINATION .
 )

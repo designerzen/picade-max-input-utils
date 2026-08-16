@@ -33,10 +33,12 @@ supports both known Picade USB IDs. **Run colour demo** flashes all 32 Plasma
 control groups. While gamepad monitoring is active, the 15 standard buttons
 for both players illuminate their matching physical Plasma connections.
 
-The combined `picade-max-input-macos-dual-report-plasma.uf2` image exposes the
-two gamepads and the Plasma serial interface together. HID-only firmware cannot
-be controlled through Web Serial because it deliberately contains no CDC
-interface.
+The recommended macOS image is `picade-max-input-macos-hid-plasma.uf2`. It
+exposes the two players as separate HID interfaces and keeps the Plasma serial
+interface. The `macos-dual-report-plasma` image instead puts both players in one
+HID interface; some macOS/browser combinations collapse its report IDs into one
+Gamepad API controller. HID-only firmware cannot be controlled through Web
+Serial because it deliberately contains no CDC interface.
 
 ## Expected result
 
@@ -51,5 +53,5 @@ For a working two-controller firmware profile, the page should show:
 
 If the board LEDs react for both players but only one controller card appears,
 the failure is below the web application: macOS/the browser has exposed only
-one logical gamepad. Compare JSON snapshots from `macos-hid`,
-`macos-dual-report`, and Windows to identify which USB layout is accepted.
+one logical gamepad. Flash `macos-hid-plasma`, disconnect and reconnect the
+board, then compare with `macos-dual-report-plasma` if necessary.

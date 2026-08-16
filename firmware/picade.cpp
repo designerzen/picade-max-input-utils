@@ -66,9 +66,9 @@ void picade_init() {
     // The three exposed ADC channels are also ordinary GPIO inputs. The
     // Picade Max encoder is passive and connects each signal to GND, so it
     // needs pull-ups and must not be connected to the adjacent 3V3 pin.
-    gpio_setup_input_pullup(26); // ADC0: encoder A
+    gpio_setup_input_pullup(26); // ADC0: encoder push switch
     gpio_setup_input_pullup(27); // ADC1: encoder B
-    gpio_setup_input_pullup(28); // ADC2: encoder push switch
+    gpio_setup_input_pullup(28); // ADC2: encoder A
 
     // Mux pins
     gpio_setup_output(pio, 0);
@@ -130,9 +130,9 @@ void picade_init() {
 }
 
 namespace {
-constexpr uint ENCODER_A_PIN = 26;
+constexpr uint ENCODER_A_PIN = 28;
 constexpr uint ENCODER_B_PIN = 27;
-constexpr uint ENCODER_PUSH_PIN = 28;
+constexpr uint ENCODER_PUSH_PIN = 26;
 constexpr int8_t ENCODER_TRANSITIONS[16] = {
      0, -1,  1,  0,
      1,  0,  0, -1,

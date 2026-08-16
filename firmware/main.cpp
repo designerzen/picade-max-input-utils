@@ -81,9 +81,16 @@ enum {
 enum {
   ITF_GAMEPADS,
 };
-#else
+#elif PICADE_USB_PROFILE == PICADE_USB_PROFILE_DUAL_REPORT_CDC
 enum {
   ITF_GAMEPADS,
+  ITF_SERIAL,
+  ITF_SERIAL_DATA,
+};
+#else
+enum {
+  ITF_GAMEPAD_1,
+  ITF_GAMEPAD_2,
   ITF_SERIAL,
   ITF_SERIAL_DATA,
 };

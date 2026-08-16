@@ -266,7 +266,10 @@ function updateChecks(gamepads) {
   }
   addCheck(fragment, 'Monitoring', state.running ? 'The live animation-frame scan is running.' : 'Select Start monitoring to begin.', state.running ? 'pass' : 'pending');
   const controllerState = gamepads.length >= 2 ? 'pass' : gamepads.length === 1 ? 'fail' : 'pending';
-  addCheck(fragment, 'Two controllers exposed', `${gamepads.length} controller${gamepads.length === 1 ? '' : 's'} visible. The Picade target is at least two.`, controllerState);
+  const controllerDetail = gamepads.length === 1
+    ? 'Only one controller is visible. On macOS, flash picade-max-input-macos-hid-plasma.uf2; the dual-report Plasma build may be collapsed into one Gamepad API device.'
+    : `${gamepads.length} controllers visible. The Picade target is at least two.`;
+  addCheck(fragment, 'Two controllers exposed', controllerDetail, controllerState);
   gamepads.forEach((gamepad) => {
     const layoutOkay = gamepad.axes.length >= 2 && gamepad.buttons.length >= 18;
     addCheck(fragment, `Controller ${gamepad.index + 1} layout`, `${gamepad.axes.length} axes and ${gamepad.buttons.length} buttons reported.`, layoutOkay ? 'pass' : 'warn');
