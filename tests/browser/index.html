@@ -30,15 +30,19 @@
             <button id="start-button" type="button">Start monitoring</button>
             <button id="stop-button" class="secondary" type="button" disabled>Stop</button>
             <button id="reset-button" class="secondary" type="button">Reset observations</button>
+            <button id="hid-connect-button" class="secondary" type="button">Connect both via WebHID</button>
+            <button id="hid-disconnect-button" class="secondary" type="button" disabled>Disconnect WebHID</button>
           </div>
         </div>
         <dl class="environment-grid">
           <div><dt>Gamepad API</dt><dd id="api-value">Checking…</dd></div>
+          <div><dt>WebHID API</dt><dd id="hid-api-value">Checking…</dd></div>
+          <div><dt>WebHID players</dt><dd id="hid-player-count">0</dd></div>
           <div><dt>Secure context</dt><dd id="secure-value">Checking…</dd></div>
           <div><dt>Controllers exposed</dt><dd id="controller-count">0</dd></div>
           <div><dt>Last scan</dt><dd id="last-scan">Not started</dd></div>
         </dl>
-        <p class="privacy-note">Everything runs locally in this tab. No gamepad data is uploaded.</p>
+        <p class="privacy-note">Everything runs locally in this tab. No gamepad data is uploaded. Use WebHID in Chrome or Edge when macOS collapses both players into one Gamepad API controller.</p>
       </section>
 
       <section class="panel plasma-panel" aria-labelledby="plasma-title">

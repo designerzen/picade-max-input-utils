@@ -1,4 +1,5 @@
 import { PicadePlasmaManager } from './picade-plasma.js';
+import { PicadeHidManager } from './picade-hid.js';
 
 const elements = {
   api: document.querySelector('#api-value'),
@@ -9,6 +10,10 @@ const elements = {
   start: document.querySelector('#start-button'),
   stop: document.querySelector('#stop-button'),
   reset: document.querySelector('#reset-button'),
+  hidApi: document.querySelector('#hid-api-value'),
+  hidPlayers: document.querySelector('#hid-player-count'),
+  hidConnect: document.querySelector('#hid-connect-button'),
+  hidDisconnect: document.querySelector('#hid-disconnect-button'),
   checks: document.querySelector('#check-list'),
   gamepads: document.querySelector('#gamepad-list'),
   empty: document.querySelector('#empty-state'),
@@ -42,14 +47,19 @@ const state = {
 };
 
 const plasma = new PicadePlasmaManager();
+const hid = new PicadeHidManager();
 
 const hasGamepadApi = typeof navigator.getGamepads === 'function';
 elements.api.textContent = hasGamepadApi ? 'Available' : 'Unavailable';
 elements.secure.textContent = window.isSecureContext ? 'Yes' : 'No';
 
-function readGamepads() {
+function readNativeGamepads() {
   if (!hasGamepadApi) return [];
   return Array.from(navigator.getGamepads()).filter(Boolean);
+}
+
+function readGamepads() {
+  return hid.active ? hid.gamepads : readNativeGamepads();
 }
 
 function getObservation(index) {
@@ -80,7 +90,7 @@ function addLog(message, announce = false) {
 
 function setMonitoring(running) {
   state.running = running;
-  elements.start.disabled = running || !hasGamepadApi;
+  elements.start.disabled = running || (!hasGamepadApi && !hid.active);
   elements.stop.disabled = !running;
   elements.status.textContent = running ? 'Monitoring' : 'Stopped';
   elements.status.className = `status ${running ? 'status-running' : 'status-idle'}`;
@@ -190,6 +200,7 @@ function createCard(gamepad) {
 
   return {
     article,
+    id: gamepad.id,
     activity,
     timestamp: metadata.querySelector('.timestamp-value'),
     axisNodes,
@@ -199,7 +210,7 @@ function createCard(gamepad) {
 
 function updateCard(gamepad, playerSlot) {
   let card = state.cards.get(gamepad.index);
-  if (!card || card.axisNodes.length !== gamepad.axes.length || card.buttonNodes.length !== gamepad.buttons.length) {
+  if (!card || card.id !== gamepad.id || card.axisNodes.length !== gamepad.axes.length || card.buttonNodes.length !== gamepad.buttons.length) {
     card?.article.remove();
     card = createCard(gamepad);
     state.cards.set(gamepad.index, card);
@@ -258,6 +269,11 @@ function addCheck(fragment, title, detail, stateName) {
 function updateChecks(gamepads) {
   const fragment = document.createDocumentFragment();
   addCheck(fragment, 'Gamepad API', hasGamepadApi ? 'This browser implements navigator.getGamepads().' : 'Use a current version of Safari, Chrome or Edge.', hasGamepadApi ? 'pass' : 'fail');
+  addCheck(fragment, 'WebHID fallback', hid.active
+    ? `${hid.connectedPlayers} raw HID players are being shown instead of the collapsed Gamepad API result.`
+    : hid.supported
+      ? 'Available. Select Connect both via WebHID if the Gamepad API exposes only one player.'
+      : 'Unavailable in this browser; use desktop Chrome or Edge.', hid.active ? 'pass' : 'warn');
   addCheck(fragment, 'Secure page', window.isSecureContext ? 'This page can request gamepad data.' : 'Serve this directory on localhost or HTTPS.', window.isSecureContext ? 'pass' : 'fail');
   addCheck(fragment, 'Web Serial API', plasma.supported ? 'Plasma control is available in this browser.' : 'Use desktop Chrome or Edge for Plasma control.', plasma.supported ? 'pass' : 'warn');
   addCheck(fragment, 'Plasma connection', plasma.connectedCount ? `${plasma.connectedCount} Picade Plasma interface${plasma.connectedCount === 1 ? '' : 's'} connected.` : 'Select Connect Plasma and approve the Picade serial interface.', plasma.connectedCount ? 'pass' : 'pending');
@@ -267,7 +283,7 @@ function updateChecks(gamepads) {
   addCheck(fragment, 'Monitoring', state.running ? 'The live animation-frame scan is running.' : 'Select Start monitoring to begin.', state.running ? 'pass' : 'pending');
   const controllerState = gamepads.length >= 2 ? 'pass' : gamepads.length === 1 ? 'fail' : 'pending';
   const controllerDetail = gamepads.length === 1
-    ? 'Only one controller is visible. On macOS, flash picade-max-input-macos-hid-plasma.uf2; the dual-report Plasma build may be collapsed into one Gamepad API device.'
+    ? 'Only one controller is visible. On macOS, select Connect both via WebHID to split the two raw Picade interfaces.'
     : `${gamepads.length} controllers visible. The Picade target is at least two.`;
   addCheck(fragment, 'Two controllers exposed', controllerDetail, controllerState);
   gamepads.forEach((gamepad) => {
@@ -344,6 +360,12 @@ function snapshot() {
     platform: navigator.userAgentData?.platform || navigator.platform || 'unknown',
     secureContext: window.isSecureContext,
     monitoring: state.running,
+    inputSource: hid.active ? 'webhid' : 'gamepad',
+    webHid: {
+      supported: hid.supported,
+      connectedDevices: hid.connectedDevices,
+      connectedPlayers: hid.connectedPlayers,
+    },
     plasma: {
       webSerialSupported: plasma.supported,
       connectedInterfaces: plasma.connectedCount,
@@ -400,6 +422,40 @@ function updatePlasmaControls() {
   elements.plasmaDisconnect.disabled = !connected;
   updateChecks(readGamepads());
 }
+
+function updateHidControls() {
+  elements.hidApi.textContent = hid.supported ? 'Available' : 'Unavailable';
+  elements.hidPlayers.textContent = String(hid.connectedPlayers);
+  elements.hidConnect.disabled = !hid.supported || hid.active;
+  elements.hidDisconnect.disabled = hid.connectedDevices === 0;
+  elements.start.disabled = state.running || (!hasGamepadApi && !hid.active);
+  if (state.running) scan();
+  else updateChecks(readGamepads());
+}
+
+async function connectHid() {
+  try {
+    await hid.connectAuthorized();
+    if (!hid.active) await hid.requestAndConnect();
+    addLog(hid.active
+      ? `WebHID split connected ${hid.connectedPlayers} players.`
+      : `WebHID found ${hid.connectedPlayers} player. Select Connect both via WebHID again if the chooser listed a second Picade interface.`, true);
+  } catch (error) {
+    if (error?.name !== 'NotFoundError' && error?.name !== 'AbortError') {
+      addLog(`Could not connect Picade WebHID: ${error?.message || error}`, true);
+    }
+  } finally {
+    updateHidControls();
+  }
+}
+
+elements.hidConnect.addEventListener('click', connectHid);
+elements.hidDisconnect.addEventListener('click', async () => {
+  await hid.disconnectAll();
+  addLog('Picade WebHID disconnected.', true);
+  updateHidControls();
+});
+hid.addEventListener('change', updateHidControls);
 
 async function withPlasmaAction(action, failureMessage) {
   try {
@@ -461,8 +517,13 @@ document.addEventListener('visibilitychange', () => {
     scan();
   }
 });
-window.addEventListener('pagehide', () => { void plasma.clear(); });
+window.addEventListener('pagehide', () => {
+  void plasma.clear();
+  void hid.disconnectAll();
+});
 
-if (!hasGamepadApi) elements.start.disabled = true;
+if (!hasGamepadApi && !hid.active) elements.start.disabled = true;
+updateHidControls();
 updatePlasmaControls();
 updateChecks(readGamepads());
+void hid.connectAuthorized().then(updateHidControls).catch(() => {});

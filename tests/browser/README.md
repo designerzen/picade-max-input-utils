@@ -4,6 +4,11 @@ This dependency-free page shows exactly what the browser receives through the
 Gamepad API. It is useful for comparing the Picade firmware profiles on macOS
 and Windows.
 
+When macOS exposes only one Gamepad API controller, desktop Chrome and Edge can
+use **Connect both via WebHID** to read the two Picade HID interfaces directly.
+This fallback is adapted from PhotoSYNTH and affects this tester only; it does
+not make unrelated games see a second Gamepad API controller.
+
 The published tester is available at
 <https://designerzen.github.io/picade-max-input-utils/>.
 
@@ -50,6 +55,10 @@ For a working two-controller firmware profile, the page should show:
 - named clockwise, counter-clockwise and encoder-push checks; and
 - a connected Plasma interface when lighting is being tested; and
 - **Input observed** for both controllers after testing both player controls.
+
+If the native controller count remains one, select **Connect both via WebHID**
+and approve the Picade interfaces. The page will replace the collapsed native
+controller with two raw HID player cards once both interfaces are available.
 
 If the board LEDs react for both players but only one controller card appears,
 the failure is below the web application: macOS/the browser has exposed only

@@ -6,7 +6,7 @@
   "description": "Picade Max firmware experiments and browser gamepad diagnostics",
   "scripts": {
     "dev": "node tests/browser/server.mjs",
-    "test": "node --check tests/browser/server.mjs && node --check tests/browser/picade-plasma.js && node --check tests/browser/gamepad-test.js && node tests/browser/picade-plasma.test.mjs"
+    "test": "node --check tests/browser/server.mjs && node --check tests/browser/picade-plasma.js && node --check tests/browser/picade-hid.js && node --check tests/browser/gamepad-test.js && node tests/browser/picade-plasma.test.mjs && node tests/browser/picade-hid.test.mjs"
   },
   "engines": {
     "node": ">=18"
